@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import RoleAdaptiveNavbar from '../components/ui/RoleAdaptiveNavbar';
@@ -10,18 +10,12 @@ const Landing = () => {
   const { user } = useAuth();
 
   // Redirect authenticated users to appropriate dashboard
-  useEffect(() => {
-    if (user) {
-      const userProfile = user.user_metadata;
-      const dashboardRoute = userProfile?.role === 'job-seeker' 
-        ? '/job-seeker-dashboard' 
-        : '/employer-dashboard';
-      navigate(dashboardRoute);
-    }
-  }, [user, navigate]);
-
-  // Don't render anything if user is authenticated (will redirect)
   if (user) {
+    const userProfile = user.user_metadata;
+    const dashboardRoute = userProfile?.role === 'job-seeker' 
+      ? '/job-seeker-dashboard' 
+      : '/employer-dashboard';
+    navigate(dashboardRoute);
     return null;
   }
 

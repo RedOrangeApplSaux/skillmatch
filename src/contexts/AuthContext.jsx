@@ -46,19 +46,14 @@ export const AuthProvider = ({ children }) => {
 
     // Listen for auth changes
     const { data: { subscription } } = auth.onAuthStateChange(async (event, session) => {
-      try {
-        if (session?.user) {
-          setUser(session.user);
-          await loadUserProfile(session.user.id);
-        } else {
-          setUser(null);
-          setUserProfile(null);
-        }
-      } catch (error) {
-        console.error('Error in auth state change:', error);
-      } finally {
-        setIsLoading(false);
+      if (session?.user) {
+        setUser(session.user);
+        await loadUserProfile(session.user.id);
+      } else {
+        setUser(null);
+        setUserProfile(null);
       }
+      setIsLoading(false);
     });
 
     return () => {
