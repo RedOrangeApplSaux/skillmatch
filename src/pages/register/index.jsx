@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import RoleAdaptiveNavbar from '../../components/ui/RoleAdaptiveNavbar';
 import NavigationBreadcrumbs from '../../components/ui/NavigationBreadcrumbs';
 import RegistrationHeader from './components/RegistrationHeader';
@@ -12,6 +13,7 @@ import Icon from '../../components/AppIcon';
 const Register = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { login } = useAuth();
   const [selectedRole, setSelectedRole] = useState('');
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,18 +46,17 @@ const Register = () => {
       // Mock API call for user registration
       console.log('Registering user:', userData);
       
-      // Store user data in localStorage for demo purposes
-      localStorage.setItem('skillmatch_user', JSON.stringify({
+      // Use the auth context login method
+      login({
         ...userData,
-        isAuthenticated: true,
         userRole: userData?.role
-      }));
+      });
       
       // Show success state briefly
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       // Navigate to appropriate dashboard
-      const dashboardRoute = userData?.role === 'job-seeker' ?'/job-seeker-dashboard' :'/employer-dashboard';
+      const dashboardRoute = userData?.role === 'job-seeker' ? '/job-seeker-dashboard' : '/employer-dashboard';
       navigate(dashboardRoute);
       
     } catch (error) {

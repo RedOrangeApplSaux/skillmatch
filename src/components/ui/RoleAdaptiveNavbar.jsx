@@ -1,12 +1,12 @@
-import React, { useState, useContext, createContext } from 'react';
+import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import Icon from '../AppIcon';
 import Button from './Button';
 
 const RoleAdaptiveNavbar = ({ className = '' }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { user, userProfile, userRole, isAuthenticated, signOut } = useAuth();
+  const { user, userRole, isAuthenticated, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -94,7 +94,7 @@ const RoleAdaptiveNavbar = ({ className = '' }) => {
                   onClick={() => handleNavigation(item?.path)}
                   className={`nav-item px-3 py-2 rounded-md text-sm font-medium transition-colors duration-150 flex items-center space-x-2 ${
                     isActiveRoute(item?.path)
-                      ? 'text-secondary bg-accent' :'text-text-primary hover:text-secondary hover:bg-muted'
+                      ? 'text-secondary bg-accent' : 'text-text-primary hover:text-secondary hover:bg-muted'
                   }`}
                 >
                   <Icon name={item?.icon} size={16} />
@@ -114,7 +114,7 @@ const RoleAdaptiveNavbar = ({ className = '' }) => {
                   </div>
                   <div className="text-sm">
                     <div className="font-medium text-text-primary">
-                      {userProfile?.full_name || user?.email || 'User'}
+                      {user?.name || 'User'}
                     </div>
                     <div className="text-text-secondary capitalize">
                       {userRole?.replace('-', ' ')}
@@ -124,7 +124,7 @@ const RoleAdaptiveNavbar = ({ className = '' }) => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => signOut()}
+                  onClick={handleLogout}
                   iconName="LogOut"
                   iconSize={16}
                 >
@@ -163,6 +163,7 @@ const RoleAdaptiveNavbar = ({ className = '' }) => {
           </div>
         </div>
       </div>
+
       {/* Mobile Navigation Menu */}
       {isMobileMenuOpen && (
         <div className="md:hidden animate-slide-in">
@@ -173,7 +174,7 @@ const RoleAdaptiveNavbar = ({ className = '' }) => {
                 onClick={() => handleNavigation(item?.path)}
                 className={`nav-item w-full text-left px-3 py-2 rounded-md text-base font-medium transition-colors duration-150 flex items-center space-x-3 ${
                   isActiveRoute(item?.path)
-                    ? 'text-secondary bg-accent' :'text-text-primary hover:text-secondary hover:bg-muted'
+                    ? 'text-secondary bg-accent' : 'text-text-primary hover:text-secondary hover:bg-muted'
                 }`}
               >
                 <Icon name={item?.icon} size={18} />
@@ -191,7 +192,7 @@ const RoleAdaptiveNavbar = ({ className = '' }) => {
                     </div>
                     <div>
                       <div className="font-medium text-text-primary">
-                        {userProfile?.full_name || user?.email || 'User'}
+                        {user?.name || 'User'}
                       </div>
                       <div className="text-sm text-text-secondary capitalize">
                         {userRole?.replace('-', ' ')}
@@ -199,7 +200,7 @@ const RoleAdaptiveNavbar = ({ className = '' }) => {
                     </div>
                   </div>
                   <button
-                    onClick={() => signOut()}
+                    onClick={handleLogout}
                     className="w-full text-left px-3 py-2 rounded-md text-base font-medium text-destructive hover:bg-muted transition-colors duration-150 flex items-center space-x-3"
                   >
                     <Icon name="LogOut" size={18} />

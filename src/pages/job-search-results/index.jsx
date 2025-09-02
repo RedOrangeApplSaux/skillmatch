@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useJobs } from '../../hooks/useJobs';
-import { useSavedJobs } from '../../hooks/useSavedJobs';
 import RoleAdaptiveNavbar from '../../components/ui/RoleAdaptiveNavbar';
 import NavigationBreadcrumbs from '../../components/ui/NavigationBreadcrumbs';
 import SearchFilters from './components/SearchFilters';
@@ -16,7 +14,6 @@ import Button from '../../components/ui/Button';
 const JobSearchResults = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { savedJobIds, toggleSaveJob } = useSavedJobs();
   
   // State management
   const [filters, setFilters] = useState({
@@ -33,12 +30,11 @@ const JobSearchResults = () => {
   
   const [sortBy, setSortBy] = useState('relevance');
   const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [savedJobs, setSavedJobs] = useState(new Set());
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   
   const resultsPerPage = 20;
-
-  // Fetch jobs using the custom hook
-  const { jobs: fetchedJobs, isLoading, error } = useJobs(filters);
 
   // Mock job data
   const mockJobs = [
@@ -154,10 +150,7 @@ const JobSearchResults = () => {
 
   // Filter and sort jobs
   const filteredAndSortedJobs = useMemo(() => {
-    // Use fetched jobs if available, otherwise fall back to mock data
-    const jobsToFilter = fetchedJobs?.length > 0 ? fetchedJobs : mockJobs;
-    
-    let filtered = jobsToFilter?.filter(job => {
+    let filtered = mockJobs?.filter(job => {
       // Keywords filter
       if (filters?.keywords) {
         const keywords = filters?.keywords?.toLowerCase();
@@ -281,10 +274,22 @@ const JobSearchResults = () => {
 
   // Handle save job
   const handleSaveJob = async (jobId) => {
+    setIsLoading(true);
     try {
-      await toggleSaveJob(jobId);
-    } catch (error) {
-      console.error('Error saving job:', error);
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setSavedJobs(prev => {
+        const newSaved = new Set(prev);
+        if (newSaved?.has(jobId)) {
+          newSaved?.delete(jobId);
+        } else {
+          newSaved?.add(jobId);
+        }
+        return newSaved;
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -360,7 +365,7 @@ const JobSearchResults = () => {
                         key={job?.id}
                         job={job}
                         onSaveJob={handleSaveJob}
-                        isSaved={savedJobIds?.has(job?.id)}
+                        isSaved={savedJobs?.has(job?.id)}
                       />
                     ))}
                   </div>

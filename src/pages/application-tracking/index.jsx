@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useApplications } from '../../hooks/useApplications';
-import { useAuth } from '../../contexts/AuthContext';
-import Icon from '../../components/AppIcon';
+
 import Button from '../../components/ui/Button';
 import NavigationBreadcrumbs from '../../components/ui/NavigationBreadcrumbs';
 import ApplicationMetrics from './components/ApplicationMetrics';
@@ -11,9 +9,9 @@ import ApplicationTable from './components/ApplicationTable';
 
 const ApplicationTracking = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { applications: fetchedApplications, isLoading: applicationsLoading, updateApplicationStatus } = useApplications();
+  const [applications, setApplications] = useState([]);
   const [filteredApplications, setFilteredApplications] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Mock applications data
   const mockApplications = [
@@ -132,14 +130,21 @@ const ApplicationTracking = () => {
   ];
 
   useEffect(() => {
-    // Use fetched applications if available, otherwise use mock data
-    const applicationsToUse = fetchedApplications?.length > 0 ? fetchedApplications : mockApplications;
-    setFilteredApplications(applicationsToUse);
-  }, [fetchedApplications]);
+    // Simulate API call
+    const loadApplications = async () => {
+      setIsLoading(true);
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setApplications(mockApplications);
+      setFilteredApplications(mockApplications);
+      setIsLoading(false);
+    };
+
+    loadApplications();
+  }, []);
 
   const handleFilterChange = (filters) => {
-    const applicationsToFilter = fetchedApplications?.length > 0 ? fetchedApplications : mockApplications;
-    let filtered = [...applicationsToFilter];
+    let filtered = [...applications];
 
     // Search query filter
     if (filters?.searchQuery) {
@@ -182,7 +187,20 @@ const ApplicationTracking = () => {
   };
 
   const handleStatusUpdate = (applicationId, newStatus) => {
-    updateApplicationStatus(applicationId, newStatus);
+    const updatedApplications = applications?.map(app => 
+      app?.id === applicationId 
+        ? { ...app, status: newStatus, lastUpdated: new Date()?.toISOString() }
+        : app
+    );
+    setApplications(updatedApplications);
+    
+    // Update filtered applications as well
+    const updatedFiltered = filteredApplications?.map(app => 
+      app?.id === applicationId 
+        ? { ...app, status: newStatus, lastUpdated: new Date()?.toISOString() }
+        : app
+    );
+    setFilteredApplications(updatedFiltered);
   };
 
   const handleWithdrawApplication = (applicationId) => {
@@ -200,7 +218,7 @@ const ApplicationTracking = () => {
     alert('Messaging feature would open here. This would allow direct communication with the employer.');
   };
 
-  if (applicationsLoading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -252,7 +270,7 @@ const ApplicationTracking = () => {
 
         {/* Filters */}
         <ApplicationFilters 
-          applications={fetchedApplications?.length > 0 ? fetchedApplications : mockApplications}
+          applications={applications}
           onFilterChange={handleFilterChange}
         />
 

@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { useApplications } from '../../hooks/useApplications';
-import { useSavedJobs } from '../../hooks/useSavedJobs';
 import RoleAdaptiveNavbar from '../../components/ui/RoleAdaptiveNavbar';
 import NavigationBreadcrumbs from '../../components/ui/NavigationBreadcrumbs';
 import ProfileCompletionWidget from './components/ProfileCompletionWidget';
@@ -16,9 +13,6 @@ import Icon from '../../components/AppIcon';
 
 const JobSeekerDashboard = () => {
   const navigate = useNavigate();
-  const { user, userProfile } = useAuth();
-  const { applications } = useApplications();
-  const { savedJobs } = useSavedJobs();
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -29,20 +23,13 @@ const JobSeekerDashboard = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Use real user data if available, otherwise fall back to mock
-  const userData = userProfile ? {
-    name: userProfile.full_name,
-    email: user?.email,
-    location: userProfile.location,
-    skills: [], // Will be populated from user_skills table
-    profileCompletion: userProfile.profile_completion_percentage || 65,
-    missingFields: ["Portfolio URL", "Professional Summary", "Certifications"]
-  } : {
-    name: "User",
-    email: user?.email || "user@example.com",
-    location: "Location not set",
+  // Mock user data
+  const userData = {
+    name: "Sarah Johnson",
+    email: "sarah.johnson@email.com",
+    location: "San Francisco, CA",
     skills: ["React", "JavaScript", "Node.js", "Python", "UI/UX Design"],
-    profileCompletion: 65,
+    profileCompletion: 75,
     missingFields: ["Portfolio URL", "Professional Summary", "Certifications"]
   };
 
@@ -264,18 +251,10 @@ const JobSeekerDashboard = () => {
               />
               
               <ApplicationStatusTracker applications={mockApplications} />
-              <ApplicationStatusTracker applications={applications?.length > 0 ? applications : mockApplications} />
               
               <SavedJobsWidget 
-                savedJobsCount={savedJobs?.length || mockSavedJobs?.length}
-                recentSavedJobs={savedJobs?.length > 0 ? savedJobs?.slice(0, 2)?.map(item => ({
-                  id: item.job_id,
-                  title: item.jobs?.title,
-                  company: item.jobs?.companies?.name,
-                  salary: item.jobs?.salary_min && item.jobs?.salary_max 
-                    ? `$${item.jobs.salary_min?.toLocaleString()} - $${item.jobs.salary_max?.toLocaleString()}`
-                    : 'Competitive'
-                })) : mockSavedJobs}
+                savedJobsCount={mockSavedJobs?.length}
+                recentSavedJobs={mockSavedJobs}
               />
               
               <SalaryInsightsWidget 
