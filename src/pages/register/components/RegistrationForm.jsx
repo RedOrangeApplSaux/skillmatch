@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../contexts/AuthContext';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import Button from '../../../components/ui/Button';
@@ -8,6 +9,7 @@ import Icon from '../../../components/AppIcon';
 
 const RegistrationForm = ({ selectedRole, onSubmit, className = '' }) => {
   const navigate = useNavigate();
+  const { signUp } = useAuth();
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -114,14 +116,9 @@ const RegistrationForm = ({ selectedRole, onSubmit, className = '' }) => {
     setIsLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Mock successful registration
+      // Prepare user data for Supabase
       const userData = {
-        id: Date.now(),
         fullName: formData?.fullName,
-        email: formData?.email,
         role: selectedRole,
         ...(selectedRole === 'job-seeker' && {
           location: formData?.location,
@@ -131,15 +128,21 @@ const RegistrationForm = ({ selectedRole, onSubmit, className = '' }) => {
           companyName: formData?.companyName,
           industry: formData?.industry
         }),
-        createdAt: new Date()?.toISOString()
+        subscribeNewsletter: formData?.subscribeNewsletter
       };
       
-      onSubmit(userData);
+      // Sign up with Supabase
+      const { data, error } = await signUp(formData?.email, formData?.password, userData);
       
-      // Navigate to appropriate dashboard
-      const dashboardRoute = selectedRole === 'job-seeker' ?'/job-seeker-dashboard' :'/employer-dashboard';
-      navigate(dashboardRoute);
+      if (error) {
+        setErrors({ submit: error.message });
+        return;
+      }
       
+      // Call parent onSubmit for any additional handling
+      onSubmit({ ...userData, id: data.user?.id });
+      
+      // Navigation will be handled by auth state change
     } catch (error) {
       setErrors({ submit: 'Registration failed. Please try again.' });
     } finally {

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useJobs } from '../../hooks/useJobs';
+import { useSavedJobs } from '../../hooks/useSavedJobs';
 import RoleAdaptiveNavbar from '../../components/ui/RoleAdaptiveNavbar';
 import NavigationBreadcrumbs from '../../components/ui/NavigationBreadcrumbs';
 import SearchFilters from './components/SearchFilters';
@@ -8,7 +10,6 @@ import JobCard from './components/JobCard';
 import JobListSkeleton from './components/JobListSkeleton';
 import NoResults from './components/NoResults';
 import Pagination from './components/Pagination';
-
 import Button from '../../components/ui/Button';
 
 const JobSearchResults = () => {
@@ -30,127 +31,17 @@ const JobSearchResults = () => {
   
   const [sortBy, setSortBy] = useState('relevance');
   const [currentPage, setCurrentPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
-  const [savedJobs, setSavedJobs] = useState(new Set());
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   
   const resultsPerPage = 20;
-
-  // Mock job data
-  const mockJobs = [
-    {
-      id: 1,
-      title: "Senior Frontend Developer",
-      company: {
-        name: "TechCorp Inc.",
-        logo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=100&h=100&fit=crop&crop=center"
-      },
-      location: "San Francisco, CA",
-      type: "full-time",
-      remote: true,
-      salary: { min: 120000, max: 160000 },
-      postedDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-      description: "We're looking for a Senior Frontend Developer to join our growing team. You'll work on cutting-edge web applications using React, TypeScript, and modern development tools.",
-      skills: ["React", "TypeScript", "JavaScript", "CSS", "Node.js", "GraphQL"],
-      industry: "technology",
-      experienceLevel: "senior",
-      companySize: "medium"
-    },
-    {
-      id: 2,
-      title: "Product Manager",
-      company: {
-        name: "InnovateLabs",
-        logo: "https://images.unsplash.com/photo-1549923746-c502d488b3ea?w=100&h=100&fit=crop&crop=center"
-      },
-      location: "New York, NY",
-      type: "full-time",
-      remote: false,
-      salary: { min: 130000, max: 180000 },
-      postedDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-      description: "Join our product team to drive the development of innovative solutions. You'll work closely with engineering, design, and business teams to deliver exceptional user experiences.",
-      skills: ["Product Strategy", "Agile", "Analytics", "User Research", "Roadmapping"],
-      industry: "technology",
-      experienceLevel: "mid",
-      companySize: "startup"
-    },
-    {
-      id: 3,
-      title: "UX/UI Designer",
-      company: {
-        name: "DesignStudio Pro",
-        logo: "https://images.unsplash.com/photo-1572021335469-31706a17aaef?w=100&h=100&fit=crop&crop=center"
-      },
-      location: "Los Angeles, CA",
-      type: "contract",
-      remote: true,
-      salary: { min: 80000, max: 120000 },
-      postedDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-      description: "We're seeking a talented UX/UI Designer to create beautiful and intuitive user interfaces. You'll be responsible for the entire design process from research to final implementation.",
-      skills: ["Figma", "Sketch", "Adobe Creative Suite", "Prototyping", "User Research"],
-      industry: "media",
-      experienceLevel: "mid",
-      companySize: "small"
-    },
-    {
-      id: 4,
-      title: "Data Scientist",
-      company: {
-        name: "DataDriven Analytics",
-        logo: "https://images.unsplash.com/photo-1551434678-e076c223a692?w=100&h=100&fit=crop&crop=center"
-      },
-      location: "Boston, MA",
-      type: "full-time",
-      remote: true,
-      salary: { min: 110000, max: 150000 },
-      postedDate: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
-      description: "Join our data science team to build predictive models and extract insights from large datasets. You\'ll work with cutting-edge ML technologies and collaborate with cross-functional teams.",
-      skills: ["Python", "Machine Learning", "SQL", "TensorFlow", "Statistics", "R"],
-      industry: "technology",
-      experienceLevel: "mid",
-      companySize: "medium"
-    },
-    {
-      id: 5,
-      title: "DevOps Engineer",
-      company: {
-        name: "CloudFirst Solutions",
-        logo: "https://images.unsplash.com/photo-1486312338219-ce68e2c6b696?w=100&h=100&fit=crop&crop=center"
-      },
-      location: "Seattle, WA",
-      type: "full-time",
-      remote: false,
-      salary: { min: 125000, max: 165000 },
-      postedDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-      description: "We're looking for a DevOps Engineer to help us scale our infrastructure and improve our deployment processes. You'll work with AWS, Kubernetes, and modern CI/CD tools.",
-      skills: ["AWS", "Kubernetes", "Docker", "Terraform", "Jenkins", "Python"],
-      industry: "technology",
-      experienceLevel: "senior",
-      companySize: "large"
-    },
-    {
-      id: 6,
-      title: "Marketing Specialist",
-      company: {
-        name: "GrowthHackers Inc.",
-        logo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=center"
-      },
-      location: "Chicago, IL",
-      type: "part-time",
-      remote: true,
-      salary: { min: 50000, max: 70000 },
-      postedDate: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000),
-      description: "Join our marketing team to drive growth through digital campaigns and content creation. You'll work on SEO, social media, and email marketing initiatives.",
-      skills: ["Digital Marketing", "SEO", "Content Creation", "Analytics", "Social Media"],
-      industry: "consulting",
-      experienceLevel: "entry",
-      companySize: "startup"
-    }
-  ];
+  
+  // Use custom hooks for data fetching
+  const { jobs, isLoading, error, refetch } = useJobs(filters);
+  const { savedJobIds, toggleSaveJob } = useSavedJobs();
 
   // Filter and sort jobs
   const filteredAndSortedJobs = useMemo(() => {
-    let filtered = mockJobs?.filter(job => {
+    let filtered = jobs?.filter(job => {
       // Keywords filter
       if (filters?.keywords) {
         const keywords = filters?.keywords?.toLowerCase();
@@ -169,8 +60,8 @@ const JobSearchResults = () => {
       }
 
       // Salary filter
-      if (filters?.salary?.min > 0 && job?.salary?.max < filters?.salary?.min) return false;
-      if (filters?.salary?.max > 0 && job?.salary?.min > filters?.salary?.max) return false;
+      if (filters?.salary?.min > 0 && job?.salaryRange?.max < filters?.salary?.min) return false;
+      if (filters?.salary?.max > 0 && job?.salaryRange?.min > filters?.salary?.max) return false;
 
       // Experience level filter
       if (filters?.experienceLevel && job?.experienceLevel !== filters?.experienceLevel) {
@@ -207,9 +98,9 @@ const JobSearchResults = () => {
         case 'date':
           return new Date(b.postedDate) - new Date(a.postedDate);
         case 'salary-high':
-          return (b?.salary?.max || 0) - (a?.salary?.max || 0);
+          return (b?.salaryRange?.max || 0) - (a?.salaryRange?.max || 0);
         case 'salary-low':
-          return (a?.salary?.min || 0) - (b?.salary?.min || 0);
+          return (a?.salaryRange?.min || 0) - (b?.salaryRange?.min || 0);
         case 'company':
           return a?.company?.name?.localeCompare(b?.company?.name);
         case 'title':
@@ -220,7 +111,7 @@ const JobSearchResults = () => {
     });
 
     return filtered;
-  }, [filters, sortBy]);
+  }, [jobs, filters, sortBy]);
 
   // Pagination
   const totalPages = Math.ceil(filteredAndSortedJobs?.length / resultsPerPage);
@@ -274,22 +165,10 @@ const JobSearchResults = () => {
 
   // Handle save job
   const handleSaveJob = async (jobId) => {
-    setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      setSavedJobs(prev => {
-        const newSaved = new Set(prev);
-        if (newSaved?.has(jobId)) {
-          newSaved?.delete(jobId);
-        } else {
-          newSaved?.add(jobId);
-        }
-        return newSaved;
-      });
-    } finally {
-      setIsLoading(false);
+      await toggleSaveJob(jobId);
+    } catch (err) {
+      console.error('Error toggling saved job:', err);
     }
   };
 
@@ -350,8 +229,19 @@ const JobSearchResults = () => {
               />
 
               {/* Job Results */}
-              {isLoading ? (
+              {isLoading || error ? (
+                error ? (
+                  <div className="text-center py-12">
+                    <Icon name="AlertCircle" size={48} className="mx-auto text-error mb-4" />
+                    <h3 className="text-lg font-medium text-text-primary mb-2">Error Loading Jobs</h3>
+                    <p className="text-text-secondary mb-4">{error}</p>
+                    <Button variant="default" onClick={refetch} iconName="RefreshCw">
+                      Try Again
+                    </Button>
+                  </div>
+                ) : (
                 <JobListSkeleton count={6} />
+                )
               ) : filteredAndSortedJobs?.length === 0 ? (
                 <NoResults
                   onClearFilters={handleClearFilters}
@@ -365,7 +255,7 @@ const JobSearchResults = () => {
                         key={job?.id}
                         job={job}
                         onSaveJob={handleSaveJob}
-                        isSaved={savedJobs?.has(job?.id)}
+                        isSaved={savedJobIds?.has(job?.id)}
                       />
                     ))}
                   </div>

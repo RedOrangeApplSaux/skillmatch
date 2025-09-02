@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import Icon from '../AppIcon';
 import Button from './Button';
 
 const RoleAdaptiveNavbar = ({ className = '' }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { user, userRole, isAuthenticated, logout } = useAuth();
+  const { user, userProfile, userRole, isAuthenticated, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -59,7 +59,7 @@ const RoleAdaptiveNavbar = ({ className = '' }) => {
   };
 
   const handleLogout = () => {
-    logout();
+    signOut();
     setIsMobileMenuOpen(false);
     navigate('/');
   };
@@ -114,7 +114,7 @@ const RoleAdaptiveNavbar = ({ className = '' }) => {
                   </div>
                   <div className="text-sm">
                     <div className="font-medium text-text-primary">
-                      {user?.name || 'User'}
+                      {userProfile?.full_name || user?.email || 'User'}
                     </div>
                     <div className="text-text-secondary capitalize">
                       {userRole?.replace('-', ' ')}

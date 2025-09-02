@@ -26,7 +26,29 @@ export const useApplications = () => {
           throw fetchError;
         }
         
-        setApplications(data || []);
+        // Transform data to match component expectations
+        const transformedApplications = data?.map(app => ({
+          id: app.id,
+          jobId: app.job_id,
+          jobTitle: app.jobs?.title,
+          company: app.jobs?.companies?.name,
+          location: app.jobs?.location,
+          positionType: app.jobs?.job_type,
+          status: app.status,
+          appliedDate: app.created_at,
+          lastUpdated: app.updated_at,
+          salary: app.jobs?.salary_min && app.jobs?.salary_max 
+            ? `$${app.jobs.salary_min.toLocaleString()} - $${app.jobs.salary_max.toLocaleString()}`
+            : 'Not specified',
+          coverLetter: app.cover_letter,
+          resumeUrl: app.resume_url,
+          portfolioUrl: app.portfolio_url,
+          salaryExpectation: app.salary_expectation,
+          availableStartDate: app.available_start_date,
+          notes: app.notes
+        })) || [];
+        
+        setApplications(transformedApplications);
       } catch (err) {
         setError(err.message);
         console.error('Error fetching applications:', err);
@@ -47,10 +69,31 @@ export const useApplications = () => {
       
       if (error) throw error;
       
-      // Add to local state
-      setApplications(prev => [data, ...prev]);
+      // Transform and add to local state
+      const transformedApp = {
+        id: data.id,
+        jobId: data.job_id,
+        jobTitle: data.jobs?.title,
+        company: data.jobs?.companies?.name,
+        location: data.jobs?.location,
+        positionType: data.jobs?.job_type,
+        status: data.status,
+        appliedDate: data.created_at,
+        lastUpdated: data.updated_at,
+        salary: data.jobs?.salary_min && data.jobs?.salary_max 
+          ? `$${data.jobs.salary_min.toLocaleString()} - $${data.jobs.salary_max.toLocaleString()}`
+          : 'Not specified',
+        coverLetter: data.cover_letter,
+        resumeUrl: data.resume_url,
+        portfolioUrl: data.portfolio_url,
+        salaryExpectation: data.salary_expectation,
+        availableStartDate: data.available_start_date,
+        notes: data.notes
+      };
       
-      return { data, error: null };
+      setApplications(prev => [transformedApp, ...prev]);
+      
+      return { data: transformedApp, error: null };
     } catch (err) {
       console.error('Error creating application:', err);
       return { data: null, error: err };
@@ -66,7 +109,7 @@ export const useApplications = () => {
       // Update local state
       setApplications(prev => 
         prev.map(app => 
-          app.id === applicationId ? { ...app, status, updated_at: data.updated_at } : app
+          app.id === applicationId ? { ...app, status, lastUpdated: data.updated_at } : app
         )
       );
       

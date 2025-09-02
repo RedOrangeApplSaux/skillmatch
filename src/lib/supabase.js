@@ -89,6 +89,11 @@ export const db = {
           industry,
           size,
           description
+        ),
+        job_skills (
+          skills (
+            name
+          )
         )
       `)
       .eq('status', 'active');
@@ -107,6 +112,12 @@ export const db = {
     }
     if (filters.remoteOnly) {
       query = query.eq('is_remote', true);
+    }
+    if (filters.salaryMin) {
+      query = query.gte('salary_min', filters.salaryMin);
+    }
+    if (filters.salaryMax) {
+      query = query.lte('salary_max', filters.salaryMax);
     }
 
     const { data, error } = await query.order('created_at', { ascending: false });
@@ -128,6 +139,13 @@ export const db = {
           website,
           founded,
           headquarters
+        ),
+        job_skills (
+          is_required,
+          skills (
+            name,
+            category
+          )
         )
       `)
       .eq('id', jobId)
@@ -144,12 +162,34 @@ export const db = {
     return { data, error };
   },
 
+  updateJob: async (jobId, updates) => {
+    const { data, error } = await supabase
+      .from('jobs')
+      .update(updates)
+      .eq('id', jobId)
+      .select()
+      .single();
+    return { data, error };
+  },
+
   // Applications
   createApplication: async (applicationData) => {
     const { data, error } = await supabase
       .from('applications')
       .insert([applicationData])
-      .select()
+      .select(`
+        *,
+        jobs (
+          id,
+          title,
+          location,
+          job_type,
+          companies (
+            name,
+            logo_url
+          )
+        )
+      `)
       .single();
     return { data, error };
   },
@@ -164,6 +204,8 @@ export const db = {
           title,
           location,
           job_type,
+          salary_min,
+          salary_max,
           companies (
             name,
             logo_url
@@ -171,6 +213,22 @@ export const db = {
         )
       `)
       .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    return { data, error };
+  },
+
+  getJobApplications: async (jobId) => {
+    const { data, error } = await supabase
+      .from('applications')
+      .select(`
+        *,
+        user_profiles (
+          full_name,
+          current_job_title,
+          location
+        )
+      `)
+      .eq('job_id', jobId)
       .order('created_at', { ascending: false });
     return { data, error };
   },
@@ -195,12 +253,37 @@ export const db = {
     return { data, error };
   },
 
+  getCompanyById: async (companyId) => {
+    const { data, error } = await supabase
+      .from('companies')
+      .select('*')
+      .eq('id', companyId)
+      .single();
+    return { data, error };
+  },
+
   getCompanyJobs: async (companyId) => {
     const { data, error } = await supabase
       .from('jobs')
-      .select('*')
+      .select(`
+        *,
+        companies (
+          name,
+          logo_url
+        )
+      `)
       .eq('company_id', companyId)
       .order('created_at', { ascending: false });
+    return { data, error };
+  },
+
+  updateCompany: async (companyId, updates) => {
+    const { data, error } = await supabase
+      .from('companies')
+      .update(updates)
+      .eq('id', companyId)
+      .select()
+      .single();
     return { data, error };
   },
 
@@ -239,5 +322,105 @@ export const db = {
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
     return { data, error };
+  },
+
+  checkJobSaved: async (userId, jobId) => {
+    const { data, error } = await supabase
+      .from('saved_jobs')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('job_id', jobId)
+      .single();
+    return { data: !!data, error };
+  },
+
+  // Skills
+  getSkills: async () => {
+    const { data, error } = await supabase
+      .from('skills')
+      .select('*')
+      .order('name');
+    return { data, error };
+  },
+
+  createSkill: async (skillData) => {
+    const { data, error } = await supabase
+      .from('skills')
+      .insert([skillData])
+      .select()
+      .single();
+    return { data, error };
+  },
+
+  getUserSkills: async (userId) => {
+    const { data, error } = await supabase
+      .from('user_skills')
+      .select(`
+        *,
+        skills (
+          name,
+          category
+        )
+      `)
+      .eq('user_id', userId);
+    return { data, error };
+  },
+
+  addUserSkill: async (userId, skillId, proficiencyLevel, yearsExperience) => {
+    const { data, error } = await supabase
+      .from('user_skills')
+      .insert([{
+        user_id: userId,
+        skill_id: skillId,
+        proficiency_level: proficiencyLevel,
+        years_experience: yearsExperience
+      }])
+      .select()
+      .single();
+    return { data, error };
+  },
+
+  removeUserSkill: async (userId, skillId) => {
+    const { error } = await supabase
+      .from('user_skills')
+      .delete()
+      .eq('user_id', userId)
+      .eq('skill_id', skillId);
+    return { error };
+  },
+
+  // Analytics and Stats
+  getApplicationStats: async (userId) => {
+    const { data, error } = await supabase
+      .from('applications')
+      .select('status')
+      .eq('user_id', userId);
+    
+    if (error) return { data: null, error };
+    
+    const stats = data.reduce((acc, app) => {
+      acc[app.status] = (acc[app.status] || 0) + 1;
+      return acc;
+    }, {});
+    
+    return { data: stats, error: null };
+  },
+
+  getJobStats: async (createdBy) => {
+    const { data, error } = await supabase
+      .from('jobs')
+      .select('status, application_count, view_count')
+      .eq('created_by', createdBy);
+    
+    if (error) return { data: null, error };
+    
+    const stats = {
+      totalJobs: data.length,
+      activeJobs: data.filter(job => job.status === 'active').length,
+      totalApplications: data.reduce((sum, job) => sum + (job.application_count || 0), 0),
+      totalViews: data.reduce((sum, job) => sum + (job.view_count || 0), 0)
+    };
+    
+    return { data: stats, error: null };
   }
 };

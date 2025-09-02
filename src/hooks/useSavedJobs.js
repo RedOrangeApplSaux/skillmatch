@@ -28,7 +28,22 @@ export const useSavedJobs = () => {
           throw fetchError;
         }
         
-        setSavedJobs(data || []);
+        // Transform data to match component expectations
+        const transformedJobs = data?.map(item => ({
+          id: item.id,
+          job_id: item.job_id,
+          title: item.jobs?.title,
+          company: item.jobs?.companies?.name,
+          location: item.jobs?.location,
+          salary: item.jobs?.salary_min && item.jobs?.salary_max 
+            ? `$${item.jobs.salary_min.toLocaleString()} - $${item.jobs.salary_max.toLocaleString()}`
+            : 'Not specified',
+          type: item.jobs?.job_type,
+          postedDate: item.jobs?.created_at,
+          savedDate: item.created_at
+        })) || [];
+        
+        setSavedJobs(transformedJobs);
         setSavedJobIds(new Set(data?.map(item => item.job_id) || []));
       } catch (err) {
         setError(err.message);
@@ -86,6 +101,16 @@ export const useSavedJobs = () => {
     }
   };
 
+  const checkJobSaved = async (jobId) => {
+    try {
+      const { data } = await db.checkJobSaved(user.id, jobId);
+      return data;
+    } catch (err) {
+      console.error('Error checking saved job:', err);
+      return false;
+    }
+  };
+
   return {
     savedJobs,
     savedJobIds,
@@ -93,6 +118,7 @@ export const useSavedJobs = () => {
     error,
     saveJob,
     unsaveJob,
-    toggleSaveJob
+    toggleSaveJob,
+    checkJobSaved
   };
 };

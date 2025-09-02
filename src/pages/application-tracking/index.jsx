@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-
+import { useApplications } from '../../hooks/useApplications';
+import { useAuth } from '../../contexts/AuthContext';
 import Button from '../../components/ui/Button';
 import NavigationBreadcrumbs from '../../components/ui/NavigationBreadcrumbs';
 import ApplicationMetrics from './components/ApplicationMetrics';
@@ -9,139 +10,19 @@ import ApplicationTable from './components/ApplicationTable';
 
 const ApplicationTracking = () => {
   const navigate = useNavigate();
-  const [applications, setApplications] = useState([]);
+  const { user } = useAuth();
+  const { applications, isLoading, error, updateApplicationStatus } = useApplications();
   const [filteredApplications, setFilteredApplications] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Mock applications data
-  const mockApplications = [
-    {
-      id: 1,
-      jobId: 'job-001',
-      jobTitle: 'Senior Frontend Developer',
-      company: 'TechCorp Solutions',
-      industry: 'Technology',
-      location: 'San Francisco, CA',
-      positionType: 'Full-time',
-      status: 'interview',
-      appliedDate: '2025-08-28T10:30:00Z',
-      lastUpdated: '2025-09-01T14:20:00Z',
-      salary: '$120,000 - $150,000',
-      applicationNotes: 'Applied through company website'
-    },
-    {
-      id: 2,
-      jobId: 'job-002',
-      jobTitle: 'React Developer',
-      company: 'StartupHub Inc',
-      industry: 'Technology',
-      location: 'Remote',
-      positionType: 'Full-time',
-      status: 'under-review',
-      appliedDate: '2025-08-30T09:15:00Z',
-      lastUpdated: '2025-08-31T16:45:00Z',
-      salary: '$90,000 - $110,000',
-      applicationNotes: 'Referred by John Smith'
-    },
-    {
-      id: 3,
-      jobId: 'job-003',
-      jobTitle: 'Full Stack Engineer',
-      company: 'InnovateLabs',
-      industry: 'Software',
-      location: 'New York, NY',
-      positionType: 'Full-time',
-      status: 'offer',
-      appliedDate: '2025-08-25T14:20:00Z',
-      lastUpdated: '2025-09-02T10:15:00Z',
-      salary: '$130,000 - $160,000',
-      applicationNotes: 'Applied via LinkedIn'
-    },
-    {
-      id: 4,
-      jobId: 'job-004',
-      jobTitle: 'JavaScript Developer',
-      company: 'WebSolutions Pro',
-      industry: 'Web Development',
-      location: 'Austin, TX',
-      positionType: 'Contract',
-      status: 'applied',
-      appliedDate: '2025-09-01T11:30:00Z',
-      lastUpdated: '2025-09-01T11:30:00Z',
-      salary: '$80 - $100/hour',
-      applicationNotes: 'Portfolio submitted'
-    },
-    {
-      id: 5,
-      jobId: 'job-005',
-      jobTitle: 'Frontend Engineer',
-      company: 'DesignFirst Agency',
-      industry: 'Design',
-      location: 'Los Angeles, CA',
-      positionType: 'Full-time',
-      status: 'rejected',
-      appliedDate: '2025-08-20T16:45:00Z',
-      lastUpdated: '2025-08-27T09:30:00Z',
-      salary: '$95,000 - $115,000',
-      applicationNotes: 'Applied through job board'
-    },
-    {
-      id: 6,
-      jobId: 'job-006',
-      jobTitle: 'UI/UX Developer',
-      company: 'CreativeTech Studios',
-      industry: 'Technology',
-      location: 'Seattle, WA',
-      positionType: 'Full-time',
-      status: 'hired',
-      appliedDate: '2025-08-15T13:20:00Z',
-      lastUpdated: '2025-08-30T15:45:00Z',
-      salary: '$105,000 - $125,000',
-      applicationNotes: 'Previous client referral'
-    },
-    {
-      id: 7,
-      jobId: 'job-007',
-      jobTitle: 'React Native Developer',
-      company: 'MobileFirst Solutions',
-      industry: 'Mobile Development',
-      location: 'Chicago, IL',
-      positionType: 'Full-time',
-      status: 'under-review',
-      appliedDate: '2025-08-29T08:45:00Z',
-      lastUpdated: '2025-09-02T12:30:00Z',
-      salary: '$110,000 - $140,000',
-      applicationNotes: 'Applied with custom cover letter'
-    },
-    {
-      id: 8,
-      jobId: 'job-008',
-      jobTitle: 'Frontend Consultant',
-      company: 'ConsultingPro LLC',
-      industry: 'Consulting',
-      location: 'Remote',
-      positionType: 'Contract',
-      status: 'interview',
-      appliedDate: '2025-08-26T15:10:00Z',
-      lastUpdated: '2025-09-01T11:20:00Z',
-      salary: '$120 - $150/hour',
-      applicationNotes: 'Networking contact introduction'
-    }
-  ];
 
   useEffect(() => {
-    // Simulate API call
-    const loadApplications = async () => {
-      setIsLoading(true);
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setApplications(mockApplications);
-      setFilteredApplications(mockApplications);
-      setIsLoading(false);
-    };
-
-    loadApplications();
-  }, []);
+    setFilteredApplications(applications);
+  }, [applications]);
+  
+  // Redirect if not authenticated
+  if (!user) {
+    navigate('/login');
+    return null;
+  }
 
   const handleFilterChange = (filters) => {
     let filtered = [...applications];
@@ -186,27 +67,17 @@ const ApplicationTracking = () => {
     setFilteredApplications(filtered);
   };
 
-  const handleStatusUpdate = (applicationId, newStatus) => {
-    const updatedApplications = applications?.map(app => 
-      app?.id === applicationId 
-        ? { ...app, status: newStatus, lastUpdated: new Date()?.toISOString() }
-        : app
-    );
-    setApplications(updatedApplications);
-    
-    // Update filtered applications as well
-    const updatedFiltered = filteredApplications?.map(app => 
-      app?.id === applicationId 
-        ? { ...app, status: newStatus, lastUpdated: new Date()?.toISOString() }
-        : app
-    );
-    setFilteredApplications(updatedFiltered);
+  const handleStatusUpdate = async (applicationId, newStatus) => {
+    try {
+      await updateApplicationStatus(applicationId, newStatus);
+    } catch (error) {
+      console.error('Error updating application status:', error);
+    }
   };
 
   const handleWithdrawApplication = (applicationId) => {
     if (window.confirm('Are you sure you want to withdraw this application? This action cannot be undone.')) {
-      const updatedApplications = applications?.filter(app => app?.id !== applicationId);
-      setApplications(updatedApplications);
+      // In a real app, this would call an API to withdraw the application
       setFilteredApplications(filteredApplications?.filter(app => app?.id !== applicationId));
     }
   };
@@ -221,6 +92,8 @@ const ApplicationTracking = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
+        <RoleAdaptiveNavbar />
+        <div className="pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center h-64">
             <div className="flex flex-col items-center space-y-4">
@@ -230,11 +103,35 @@ const ApplicationTracking = () => {
           </div>
         </div>
       </div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <RoleAdaptiveNavbar />
+        <div className="pt-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="text-center py-12">
+              <Icon name="AlertCircle" size={48} className="mx-auto text-error mb-4" />
+              <h3 className="text-lg font-medium text-text-primary mb-2">Error Loading Applications</h3>
+              <p className="text-text-secondary mb-4">{error}</p>
+              <Button variant="default" onClick={() => window.location.reload()} iconName="RefreshCw">
+                Try Again
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background">
+      <RoleAdaptiveNavbar />
+      <div className="pt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -321,6 +218,7 @@ const ApplicationTracking = () => {
             </Button>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

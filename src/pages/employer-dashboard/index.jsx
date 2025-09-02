@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { db } from '../../lib/supabase';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
+import RoleAdaptiveNavbar from '../../components/ui/RoleAdaptiveNavbar';
 import JobPostingCard from './components/JobPostingCard';
 import MetricsWidget from './components/MetricsWidget';
 import ActivityFeed from './components/ActivityFeed';
@@ -10,70 +13,55 @@ import QuickActions from './components/QuickActions';
 
 const EmployerDashboard = () => {
   const navigate = useNavigate();
+  const { user, userProfile } = useAuth();
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
+  const [jobs, setJobs] = useState([]);
+  const [stats, setStats] = useState({});
+  
+  // Redirect if not authenticated or wrong role
+  if (!user) {
+    navigate('/login');
+    return null;
+  }
+  
+  if (userProfile && userProfile.role !== 'employer') {
+    navigate('/job-seeker-dashboard');
+    return null;
+  }
 
-  // Mock data for job postings
-  const mockJobs = [
-    {
-      id: 1,
-      title: "Senior Frontend Developer",
-      department: "Engineering",
-      location: "San Francisco, CA",
-      type: "Full-time",
-      salaryRange: "120,000 - 150,000",
-      status: "active",
-      applicationCount: 24,
-      deadline: "2025-01-15",
-      postedDate: "5 days ago",
-      views: 156
-    },
-    {
-      id: 2,
-      title: "Product Marketing Manager",
-      department: "Marketing",
-      location: "Remote",
-      type: "Full-time",
-      salaryRange: "90,000 - 120,000",
-      status: "active",
-      applicationCount: 18,
-      deadline: "2025-01-20",
-      postedDate: "3 days ago",
-      views: 89
-    },
-    {
-      id: 3,
-      title: "UX Designer",
-      department: "Design",
-      location: "New York, NY",
-      type: "Contract",
-      salaryRange: "80,000 - 100,000",
-      status: "draft",
-      applicationCount: 0,
-      deadline: "2025-01-25",
-      postedDate: "1 day ago",
-      views: 12
-    },
-    {
-      id: 4,
-      title: "Data Scientist",
-      department: "Analytics",
-      location: "Austin, TX",
-      type: "Full-time",
-      salaryRange: "110,000 - 140,000",
-      status: "active",
-      applicationCount: 31,
-      deadline: "2025-01-10",
-      postedDate: "1 week ago",
-      views: 203
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      setIsLoading(true);
+      try {
+        // Load company jobs
+        const { data: jobsData, error: jobsError } = await db.getCompanyJobs(userProfile?.company_id);
+        if (!jobsError && jobsData) {
+          setJobs(jobsData);
+        }
+        
+        // Load job statistics
+        const { data: statsData, error: statsError } = await db.getJobStats(user.id);
+        if (!statsError && statsData) {
+          setStats(statsData);
+        }
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (user && userProfile) {
+      loadDashboardData();
     }
-  ];
+  }, [user, userProfile]);
 
   // Mock metrics data
   const metricsData = [
     {
       title: "Total Applications",
-      value: "73",
+      value: stats?.totalApplications?.toString() || "0",
       change: "+12%",
       changeType: "increase",
       icon: "FileText",
@@ -97,7 +85,7 @@ const EmployerDashboard = () => {
     },
     {
       title: "Active Job Posts",
-      value: "12",
+      value: stats?.activeJobs?.toString() || "0",
       change: "+2",
       changeType: "increase",
       icon: "Briefcase",
@@ -173,7 +161,7 @@ const EmployerDashboard = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  const filteredJobs = mockJobs?.filter(job => {
+  const filteredJobs = jobs?.filter(job => {
     if (selectedFilter === 'all') return true;
     return job?.status === selectedFilter;
   });
@@ -202,9 +190,12 @@ const EmployerDashboard = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
+        <RoleAdaptiveNavbar />
+        <div className="pt-16 flex items-center justify-center flex-1">
         <div className="flex flex-col items-center space-y-4">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-secondary"></div>
           <p className="text-text-secondary">Loading dashboard...</p>
+        </div>
         </div>
       </div>
     );
@@ -212,6 +203,7 @@ const EmployerDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background pt-16">
+      <RoleAdaptiveNavbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header Section */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
