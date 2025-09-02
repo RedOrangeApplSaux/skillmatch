@@ -4,6 +4,8 @@ import { useApplications } from '../../hooks/useApplications';
 import { useAuth } from '../../contexts/AuthContext';
 import Button from '../../components/ui/Button';
 import NavigationBreadcrumbs from '../../components/ui/NavigationBreadcrumbs';
+import RoleAdaptiveNavbar from '../../components/ui/RoleAdaptiveNavbar';
+import Icon from '../../components/AppIcon';
 import ApplicationMetrics from './components/ApplicationMetrics';
 import ApplicationFilters from './components/ApplicationFilters';
 import ApplicationTable from './components/ApplicationTable';
@@ -94,15 +96,14 @@ const ApplicationTracking = () => {
       <div className="min-h-screen bg-background">
         <RoleAdaptiveNavbar />
         <div className="pt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="flex flex-col items-center space-y-4">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-secondary"></div>
-              <p className="text-text-secondary">Loading your applications...</p>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="flex items-center justify-center h-64">
+              <div className="flex flex-col items-center space-y-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-secondary"></div>
+                <p className="text-text-secondary">Loading your applications...</p>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
         </div>
       </div>
     );
@@ -132,7 +133,7 @@ const ApplicationTracking = () => {
     <div className="min-h-screen bg-background">
       <RoleAdaptiveNavbar />
       <div className="pt-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
           <NavigationBreadcrumbs />
