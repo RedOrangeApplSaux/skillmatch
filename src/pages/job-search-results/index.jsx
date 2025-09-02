@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useJobs } from '../../hooks/useJobs';
 import { useSavedJobs } from '../../hooks/useSavedJobs';
+import { useApplications } from '../../hooks/useApplications';
+import { useAuth } from '../../contexts/AuthContext';
 import RoleAdaptiveNavbar from '../../components/ui/RoleAdaptiveNavbar';
 import NavigationBreadcrumbs from '../../components/ui/NavigationBreadcrumbs';
 import SearchFilters from './components/SearchFilters';
@@ -15,6 +17,7 @@ import Button from '../../components/ui/Button';
 const JobSearchResults = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   // State management
   const [filters, setFilters] = useState({
@@ -38,6 +41,7 @@ const JobSearchResults = () => {
   // Use custom hooks for data fetching
   const { jobs, isLoading, error, refetch } = useJobs(filters);
   const { savedJobIds, toggleSaveJob } = useSavedJobs();
+  const { createApplication } = useApplications();
 
   // Filter and sort jobs
   const filteredAndSortedJobs = useMemo(() => {
@@ -165,10 +169,42 @@ const JobSearchResults = () => {
 
   // Handle save job
   const handleSaveJob = async (jobId) => {
+    if (!user) {
+      navigate('/login', { state: { from: location.pathname + location.search } });
+      return;
+    }
     try {
       await toggleSaveJob(jobId);
     } catch (err) {
       console.error('Error toggling saved job:', err);
+    }
+  };
+
+  // Handle quick apply
+  const handleQuickApply = async (jobId) => {
+    if (!user) {
+      navigate('/login', { state: { from: location.pathname + location.search } });
+      return;
+    }
+
+    try {
+      // Create a quick application with minimal data
+      const { error } = await createApplication({
+        job_id: jobId,
+        cover_letter: 'Quick application - I am interested in this position and would like to be considered. I will provide more details if selected for an interview.',
+        notes: 'Applied via Quick Apply'
+      });
+      
+      if (error) {
+        console.error('Quick application failed:', error);
+        alert('Failed to submit application. Please try the detailed application instead.');
+        return;
+      }
+      
+      alert('Application submitted successfully! You can track its progress in your Applications page.');
+    } catch (error) {
+      console.error('Quick application failed:', error);
+      alert('Failed to submit application. Please try again.');
     }
   };
 
@@ -255,7 +291,9 @@ const JobSearchResults = () => {
                         key={job?.id}
                         job={job}
                         onSaveJob={handleSaveJob}
+                        onQuickApply={handleQuickApply}
                         isSaved={savedJobIds?.has(job?.id)}
+                        userRole={user?.role || 'job-seeker'}
                       />
                     ))}
                   </div>

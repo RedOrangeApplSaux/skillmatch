@@ -4,9 +4,10 @@ import Icon from '../../../components/AppIcon';
 import Image from '../../../components/AppImage';
 import Button from '../../../components/ui/Button';
 
-const JobCard = ({ job, onSaveJob, isSaved = false }) => {
+const JobCard = ({ job, onSaveJob, onQuickApply, isSaved = false, userRole = 'job-seeker' }) => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [isApplying, setIsApplying] = useState(false);
 
   const handleViewDetails = () => {
     navigate('/job-details', { state: { jobId: job?.id } });
@@ -19,6 +20,21 @@ const JobCard = ({ job, onSaveJob, isSaved = false }) => {
       await onSaveJob(job?.id);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleQuickApply = async (e) => {
+    e?.stopPropagation();
+    setIsApplying(true);
+    try {
+      if (onQuickApply) {
+        await onQuickApply(job?.id);
+      } else {
+        // Navigate to job details for full application
+        navigate(`/job-details?id=${job?.id}`);
+      }
+    } finally {
+      setIsApplying(false);
     }
   };
 
@@ -92,19 +108,36 @@ const JobCard = ({ job, onSaveJob, isSaved = false }) => {
               </div>
               
               <div className="flex items-center space-x-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleSaveJob}
-                  loading={isLoading}
-                  className="text-text-secondary hover:text-secondary"
-                >
-                  <Icon 
-                    name={isSaved ? "Heart" : "Heart"} 
-                    size={18}
-                    className={isSaved ? "fill-current text-secondary" : ""}
-                  />
-                </Button>
+                {userRole === 'job-seeker' && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleSaveJob}
+                      loading={isLoading}
+                      className="text-text-secondary hover:text-secondary"
+                      title={isSaved ? "Remove from saved jobs" : "Save job"}
+                    >
+                      <Icon 
+                        name={isSaved ? "Heart" : "Heart"} 
+                        size={18}
+                        className={isSaved ? "fill-current text-secondary" : ""}
+                      />
+                    </Button>
+                    
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleQuickApply}
+                      loading={isApplying}
+                      iconName="Send"
+                      iconSize={14}
+                      iconPosition="left"
+                    >
+                      {isApplying ? 'Applying...' : 'Quick Apply'}
+                    </Button>
+                  </>
+                )}
                 
                 <Button
                   variant="outline"
