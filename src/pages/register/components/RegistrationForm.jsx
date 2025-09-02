@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../contexts/AuthContext';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import Button from '../../../components/ui/Button';
@@ -8,6 +9,7 @@ import Icon from '../../../components/AppIcon';
 
 const RegistrationForm = ({ selectedRole, onSubmit, className = '' }) => {
   const navigate = useNavigate();
+  const { signUp } = useAuth();
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -114,34 +116,28 @@ const RegistrationForm = ({ selectedRole, onSubmit, className = '' }) => {
     setIsLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Mock successful registration
-      const userData = {
-        id: Date.now(),
-        fullName: formData?.fullName,
-        email: formData?.email,
+      // Register user with Supabase
+      const { data, error } = await signUp(formData.email, formData.password, {
+        fullName: formData.fullName,
         role: selectedRole,
-        ...(selectedRole === 'job-seeker' && {
-          location: formData?.location,
-          currentJobTitle: formData?.currentJobTitle
-        }),
-        ...(selectedRole === 'employer' && {
-          companyName: formData?.companyName,
-          industry: formData?.industry
-        }),
-        createdAt: new Date()?.toISOString()
-      };
+        location: formData.location,
+        currentJobTitle: formData.currentJobTitle,
+        companyName: formData.companyName,
+        industry: formData.industry
+      });
       
-      onSubmit(userData);
+      if (error) {
+        throw error;
+      }
+      
+      onSubmit(data.user);
       
       // Navigate to appropriate dashboard
       const dashboardRoute = selectedRole === 'job-seeker' ?'/job-seeker-dashboard' :'/employer-dashboard';
       navigate(dashboardRoute);
       
     } catch (error) {
-      setErrors({ submit: 'Registration failed. Please try again.' });
+      setErrors({ submit: error.message || 'Registration failed. Please try again.' });
     } finally {
       setIsLoading(false);
     }

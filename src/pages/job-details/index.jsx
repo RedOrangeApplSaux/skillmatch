@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useJob } from '../../hooks/useJob';
+import { useApplications } from '../../hooks/useApplications';
+import { useSavedJobs } from '../../hooks/useSavedJobs';
+import { useAuth } from '../../contexts/AuthContext';
 import RoleAdaptiveNavbar from '../../components/ui/RoleAdaptiveNavbar';
 import NavigationBreadcrumbs, { JobSearchBreadcrumbs } from '../../components/ui/NavigationBreadcrumbs';
 import JobHeader from './components/JobHeader';
@@ -14,14 +18,16 @@ import Icon from '../../components/AppIcon';
 const JobDetails = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
+  const { createApplication } = useApplications();
+  const { savedJobIds, toggleSaveJob } = useSavedJobs();
   const jobId = searchParams?.get('id') || '1';
   
-  const [job, setJob] = useState(null);
+  const { job: fetchedJob, isLoading: jobLoading, error: jobError } = useJob(jobId);
   const [relatedJobs, setRelatedJobs] = useState([]);
   const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmittingApplication, setIsSubmittingApplication] = useState(false);
 
   // Mock job data
   const mockJobs = [
@@ -180,53 +186,62 @@ const JobDetails = () => {
   ];
 
   useEffect(() => {
-    // Simulate API call to fetch job details
-    const fetchJobDetails = async () => {
-      setIsLoading(true);
-      try {
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const foundJob = mockJobs?.find(j => j?.id === jobId);
-        if (foundJob) {
-          setJob(foundJob);
-          setRelatedJobs(mockJobs?.filter(j => j?.id !== jobId));
-        } else {
-          // If job not found, redirect to job search
-          navigate('/job-search-results');
-        }
-      } catch (error) {
-        console.error('Error fetching job details:', error);
-        navigate('/job-search-results');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    // Set related jobs from mock data
+    setRelatedJobs(mockJobs?.filter(j => j?.id !== jobId));
+  }, [jobId]);
 
-    fetchJobDetails();
-  }, [jobId, navigate]);
-
+  // Use fetched job if available, otherwise fall back to mock data
+  const job = fetchedJob || mockJobs?.find(j => j?.id === jobId);
+  const isLoading = jobLoading;
+  const isSaved = savedJobIds?.has(jobId);
   const handleApply = () => {
+    if (!user) {
+      navigate('/register?role=job-seeker');
+      return;
+    }
     setIsApplicationModalOpen(true);
   };
 
   const handleSave = () => {
-    setIsSaved(!isSaved);
-    // In a real app, this would make an API call to save/unsave the job
+    if (!user) {
+      navigate('/register?role=job-seeker');
+      return;
+    }
+    toggleSaveJob(jobId);
   };
 
   const handleShare = () => {
     setIsShareModalOpen(true);
   };
 
-  const handleApplicationSubmit = (applicationData) => {
-    console.log('Application submitted:', applicationData);
-    // In a real app, this would submit the application via API
+  const handleApplicationSubmit = async (applicationData) => {
+    setIsSubmittingApplication(true);
     
-    // Show success message and redirect to application tracking
-    setTimeout(() => {
-      navigate('/application-tracking');
-    }, 1000);
+    try {
+      const { data, error } = await createApplication({
+        job_id: jobId,
+        cover_letter: applicationData.coverLetter,
+        portfolio_url: applicationData.portfolioUrl,
+        salary_expectation: applicationData.salaryExpectation ? parseInt(applicationData.salaryExpectation.replace(/[^0-9]/g, '')) : null,
+        available_start_date: applicationData.availableStartDate || null,
+        notes: `Applied via SkillMatch platform. Newsletter: ${applicationData.subscribeNewsletter ? 'Yes' : 'No'}`
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Show success and redirect
+      setTimeout(() => {
+        navigate('/application-tracking');
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Error submitting application:', error);
+      alert('Failed to submit application. Please try again.');
+    } finally {
+      setIsSubmittingApplication(false);
+    }
   };
 
   const handleBackToSearch = () => {

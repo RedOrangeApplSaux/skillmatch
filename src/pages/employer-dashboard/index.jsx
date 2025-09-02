@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import JobPostingCard from './components/JobPostingCard';
@@ -10,6 +11,7 @@ import QuickActions from './components/QuickActions';
 
 const EmployerDashboard = () => {
   const navigate = useNavigate();
+  const { user, userProfile } = useAuth();
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
 
@@ -156,11 +158,11 @@ const EmployerDashboard = () => {
 
   // Mock company profile data
   const mockCompanyProfile = {
-    logo: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=100&h=100&fit=crop&crop=center",
-    description: "Leading technology company focused on innovative solutions",
-    industry: "Technology",
-    website: "https://company.com",
-    location: "San Francisco, CA",
+    logo: userProfile?.logo_url || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=100&h=100&fit=crop&crop=center",
+    description: userProfile?.bio || "Leading technology company focused on innovative solutions",
+    industry: userProfile?.industry || "Technology",
+    website: userProfile?.website_url || "https://company.com",
+    location: userProfile?.location || "San Francisco, CA",
     benefits: ["Health Insurance", "401k", "Remote Work", "Flexible Hours"]
   };
 
@@ -315,7 +317,7 @@ const EmployerDashboard = () => {
                       Post Your First Job
                     </Button>
                   </div>
-                )}
+                Welcome back{userProfile?.full_name ? `, ${userProfile.full_name}` : ''}! Here's what's happening with your recruitment activities.
               </div>
             </div>
           </div>

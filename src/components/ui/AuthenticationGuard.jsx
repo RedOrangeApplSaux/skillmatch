@@ -1,13 +1,6 @@
 import React, { useContext, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-
-// Mock authentication context
-const AuthContext = React.createContext({
-  user: null,
-  userRole: null,
-  isAuthenticated: false,
-  isLoading: false
-});
+import { useAuth } from '../../contexts/AuthContext';
 
 const AuthenticationGuard = ({ 
   children, 
@@ -16,7 +9,7 @@ const AuthenticationGuard = ({
   redirectTo = '/register',
   fallback = null 
 }) => {
-  const { user, userRole, isAuthenticated, isLoading } = useContext(AuthContext);
+  const { user, userRole, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
