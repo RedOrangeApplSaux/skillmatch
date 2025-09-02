@@ -26,15 +26,17 @@ const JobSeekerDashboard = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   
   // Redirect if not authenticated or wrong role
-  if (!user) {
-    navigate('/login');
-    return null;
-  }
-  
-  if (userProfile && userProfile.role !== 'job-seeker') {
-    navigate('/employer-dashboard');
-    return null;
-  }
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    
+    if (userProfile && userProfile.role !== 'job-seeker') {
+      navigate('/employer-dashboard');
+      return;
+    }
+  }, [user, userProfile, navigate]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -120,10 +122,13 @@ const JobSeekerDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-bold text-text-primary">
-                  {getGreeting()}, {userProfile?.full_name || user?.email}!
+                  {getGreeting()}, {userProfile?.full_name ? userProfile.full_name.split(' ')[0] : 'there'}! 👋
                 </h1>
                 <p className="text-text-secondary mt-1">
-                  Ready to find your next opportunity?
+                  {calculateProfileCompletion() < 80 
+                    ? "Complete your profile to get better job matches" 
+                    : "Here are the latest opportunities for you"
+                  }
                 </p>
               </div>
               <div className="hidden md:flex items-center space-x-4">
