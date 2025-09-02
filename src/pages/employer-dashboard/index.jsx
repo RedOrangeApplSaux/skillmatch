@@ -9,6 +9,7 @@ import JobPostingCard from './components/JobPostingCard';
 import MetricsWidget from './components/MetricsWidget';
 import ActivityFeed from './components/ActivityFeed';
 import CompanyProfileWidget from './components/CompanyProfileWidget';
+import CompanyProfileCompletionWidget from './components/CompanyProfileCompletionWidget';
 import QuickActions from './components/QuickActions';
 
 const EmployerDashboard = () => {
@@ -18,17 +19,20 @@ const EmployerDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [jobs, setJobs] = useState([]);
   const [stats, setStats] = useState({});
+  const [companyProfile, setCompanyProfile] = useState(null);
   
   // Redirect if not authenticated or wrong role
-  if (!user) {
-    navigate('/login');
-    return null;
-  }
-  
-  if (userProfile && userProfile.role !== 'employer') {
-    navigate('/job-seeker-dashboard');
-    return null;
-  }
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    
+    if (userProfile && userProfile.role !== 'employer') {
+      navigate('/job-seeker-dashboard');
+      return;
+    }
+  }, [user, userProfile, navigate]);
 
   useEffect(() => {
     const loadDashboardData = async () => {
@@ -44,6 +48,14 @@ const EmployerDashboard = () => {
         const { data: statsData, error: statsError } = await db.getJobStats(user.id);
         if (!statsError && statsData) {
           setStats(statsData);
+        }
+
+        // Load company profile if user has company_id
+        if (userProfile?.company_id) {
+          const { data: companyData, error: companyError } = await db.getCompanyById(userProfile.company_id);
+          if (!companyError && companyData) {
+            setCompanyProfile(companyData);
+          }
         }
       } catch (error) {
         console.error('Error loading dashboard data:', error);
@@ -208,9 +220,11 @@ const EmployerDashboard = () => {
         {/* Header Section */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-text-primary mb-2">Employer Dashboard</h1>
+            <h1 className="text-3xl font-bold text-text-primary mb-2">
+              Welcome, {userProfile?.full_name ? userProfile.full_name.split(' ')[0] : 'HR Manager'}! 👋
+            </h1>
             <p className="text-text-secondary">
-              Welcome back! Here's what's happening with your recruitment activities.
+              Manage your job posts and applicants here. {stats?.totalApplications > 0 ? `You have ${stats.totalApplications} new applications.` : ''}
             </p>
           </div>
           <div className="mt-4 lg:mt-0">
@@ -314,8 +328,14 @@ const EmployerDashboard = () => {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Company Profile Completion Widget */}
+            <CompanyProfileCompletionWidget 
+              userProfile={userProfile} 
+              companyProfile={companyProfile} 
+            />
+            
             {/* Company Profile Widget */}
-            <CompanyProfileWidget profileData={mockCompanyProfile} />
+            <CompanyProfileWidget profileData={companyProfile || mockCompanyProfile} />
             
             {/* Activity Feed */}
             <ActivityFeed activities={mockActivities} />

@@ -92,14 +92,23 @@ const ApplicationModal = ({ isOpen, onClose, job, onSubmit }) => {
     setIsSubmitting(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      onSubmit({
+      await onSubmit({
         jobId: job?.id,
         ...applicationData,
         submittedAt: new Date()?.toISOString()
       });
+      
+      // Reset form
+      setApplicationData({
+        coverLetter: '',
+        resumeFile: null,
+        portfolioUrl: '',
+        availableStartDate: '',
+        salaryExpectation: '',
+        agreeToTerms: false,
+        allowContact: true
+      });
+      setErrors({});
       
       onClose();
     } catch (error) {

@@ -19,7 +19,8 @@ const RecommendedJobsSection = ({ recommendedJobs = [] }) => {
 
   const handleSaveJob = (e, jobId) => {
     e?.stopPropagation();
-    // In a real app, this would save the job to user's saved jobs console.log('Save job:', jobId);
+    // In a real app, this would save the job to user's saved jobs
+    console.log('Save job:', jobId);
   };
 
   const formatSalary = (min, max) => {
