@@ -4,6 +4,7 @@ import ScrollToTop from "components/ScrollToTop";
 import ErrorBoundary from "components/ErrorBoundary";
 import { AuthProvider } from "./contexts/AuthContext";
 import NotFound from "pages/NotFound";
+import Landing from './pages/Landing';
 import JobSeekerDashboard from './pages/job-seeker-dashboard';
 import JobDetails from './pages/job-details';
 import EmployerDashboard from './pages/employer-dashboard';
@@ -21,7 +22,7 @@ const Routes = () => {
           <ScrollToTop />
           <RouterRoutes>
             {/* Define your route here */}
-            <Route path="/" element={<Register />} />
+            <Route path="/" element={<Landing />} />
             <Route path="/job-seeker-dashboard" element={<JobSeekerDashboard />} />
             <Route path="/job-details" element={<JobDetails />} />
             <Route path="/employer-dashboard" element={<EmployerDashboard />} />
