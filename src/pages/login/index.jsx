@@ -72,6 +72,7 @@ const Login = () => {
       }
       
     } catch (error) {
+      console.error('Login error:', error);
       setErrors({ submit: 'Login failed. Please try again.' });
     } finally {
       setIsLoading(false);

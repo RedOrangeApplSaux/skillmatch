@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import RoleAdaptiveNavbar from '../../components/ui/RoleAdaptiveNavbar';
 import NavigationBreadcrumbs from '../../components/ui/NavigationBreadcrumbs';
 import RegistrationHeader from './components/RegistrationHeader';
@@ -13,7 +13,7 @@ import Icon from '../../components/AppIcon';
 const Register = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { signUp } = useAuth();
   const [selectedRole, setSelectedRole] = useState('');
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,21 +43,15 @@ const Register = () => {
     setCurrentStep(3);
     
     try {
-      // Mock API call for user registration
       console.log('Registering user:', userData);
       
-      // Use the auth context login method
-      login({
-        ...userData,
-        userRole: userData?.role
-      });
+      // Registration will be handled by RegistrationForm component
+      // This is just for displaying success state
       
       // Show success state briefly
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Navigate to appropriate dashboard
-      const dashboardRoute = userData?.role === 'job-seeker' ? '/job-seeker-dashboard' : '/employer-dashboard';
-      navigate(dashboardRoute);
+      // Navigation will be handled by auth state change in AuthContext
       
     } catch (error) {
       console.error('Registration failed:', error);

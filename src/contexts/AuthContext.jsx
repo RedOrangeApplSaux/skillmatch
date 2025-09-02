@@ -82,24 +82,32 @@ export const AuthProvider = ({ children }) => {
       if (error) throw error;
       
       if (data.user) {
-        // Create user profile
-        const profileData = {
-          full_name: userData.fullName,
-          role: userData.role,
-          location: userData.location,
-          current_job_title: userData.currentJobTitle,
-          company_name: userData.companyName,
-          industry: userData.industry
-        };
-        
-        const { error: profileError } = await db.createUserProfile(data.user.id, profileData);
-        if (profileError) {
-          console.error('Error creating user profile:', profileError);
+        try {
+          // Create user profile
+          const profileData = {
+            full_name: userData.fullName,
+            role: userData.role,
+            location: userData.location,
+            current_job_title: userData.currentJobTitle,
+            company_name: userData.companyName,
+            industry: userData.industry
+          };
+          
+          console.log('Registering user:', { ...userData, id: data.user.id });
+          const { error: profileError } = await db.createUserProfile(data.user.id, profileData);
+          if (profileError) {
+            console.error('Error creating user profile:', profileError);
+            // Don't throw error for profile creation failure, as auth was successful
+          }
+        } catch (profileError) {
+          console.error('Profile creation failed:', profileError);
+          // Don't throw error for profile creation failure
         }
       }
       
       return { data, error };
     } catch (error) {
+      console.error('Sign up error:', error);
       return { data: null, error };
     } finally {
       setIsLoading(false);
